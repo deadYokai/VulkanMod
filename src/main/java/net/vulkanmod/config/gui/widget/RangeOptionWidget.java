@@ -2,7 +2,6 @@ package net.vulkanmod.config.gui.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -60,9 +59,9 @@ public class RangeOptionWidget extends OptionWidget<RangeOption> {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        boolean isLeft = event.key() == GLFW.GLFW_KEY_LEFT;
-        boolean isRight = event.key() == GLFW.GLFW_KEY_RIGHT;
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        boolean isLeft = keyCode == GLFW.GLFW_KEY_LEFT;
+        boolean isRight = keyCode == GLFW.GLFW_KEY_RIGHT;
 
         if (isLeft || isRight) {
             float direction = isLeft ? -1.0f : 1.0f;

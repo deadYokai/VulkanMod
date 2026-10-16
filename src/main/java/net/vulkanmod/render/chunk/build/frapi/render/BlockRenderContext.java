@@ -2,12 +2,10 @@ package net.vulkanmod.render.chunk.build.frapi.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.fabricmc.fabric.api.renderer.v1.mesh.ShadeMode;
-import net.fabricmc.fabric.api.renderer.v1.render.BlockVertexConsumerProvider;
+import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
+import net.fabricmc.fabric.api.renderer.v1.material.ShadeMode;
 import net.fabricmc.fabric.api.util.TriState;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -26,10 +24,7 @@ import net.vulkanmod.render.chunk.build.light.smooth.SmoothLightPipeline;
  * Context for non-terrain block rendering.
  */
 public class BlockRenderContext extends AbstractBlockRenderContext {
-	public static final ThreadLocal<BlockRenderContext> POOL = ThreadLocal.withInitial(BlockRenderContext::new);
-
-	private BlockVertexConsumerProvider vertexConsumers;
-    private ChunkSectionLayer defaultRenderLayer;
+	private VertexConsumer vertexConsumer;
 
 	private final ArrayLightDataCache lightDataCache = new ArrayLightDataCache();
 
@@ -45,55 +40,49 @@ public class BlockRenderContext extends AbstractBlockRenderContext {
 		}
 
 		this.setupLightPipelines(flatLightPipeline, smoothLightPipeline);
-
-		random = RandomSource.create();
     }
 
-	public void render(BlockAndTintGetter blockView, BlockStateModel model, BlockState state, BlockPos pos, PoseStack matrixStack, BlockVertexConsumerProvider buffers, boolean cull, long seed, int overlay) {
-		Vec3 offset = state.getOffset(pos);
+	public void render(BlockAndTintGetter blockView, BakedModel model, BlockState state, BlockPos pos, PoseStack matrixStack, VertexConsumer buffer, boolean cull, RandomSource random, long seed, int overlay) {
+		Vec3 offset = state.getOffset(blockView, pos);
 		matrixStack.translate(offset.x, offset.y, offset.z);
 
 		this.blockPos = pos;
-		this.vertexConsumers = buffers;
-        this.defaultRenderLayer = ItemBlockRenderTypes.getChunkRenderType(state);
-		this.matrices = matrixStack.last();
+		this.vertexConsumer = buffer;
+		this.matrix = matrixStack.last().pose();
+		this.normalMatrix = matrixStack.last().normal();
 		this.overlay = overlay;
-		this.random.setSeed(seed);
+
+		this.random = random;
+		this.seed = seed;
 
 		this.lightDataCache.reset(blockView, pos);
 
 		this.prepareForWorld(blockView, cull);
-		this.prepareForBlock(state, pos, state.getLightEmission() == 0);
+		this.prepareForBlock(state, pos, model.useAmbientOcclusion());
 
-		model.emitQuads(getEmitter(), blockView, pos, state, random, this::isFaceCulled);
+		model.emitBlockQuads(blockView, state, pos, this.randomSupplier, this);
 
-		this.vertexConsumers = null;
-	}
-
-	@Override
-	protected VertexConsumer getVertexConsumer(ChunkSectionLayer layer) {
-		return vertexConsumers.getBuffer(layer);
+		this.vertexConsumer = null;
 	}
 
 	protected void endRenderQuad(MutableQuadViewImpl quad) {
-		final TriState aoMode = quad.ambientOcclusion();
+		final RenderMaterial mat = quad.material();
+		final int colorIndex = mat.disableColorIndex() ? -1 : quad.colorIndex();
+		final TriState aoMode = mat.ambientOcclusion();
 		final boolean ao = this.useAO && (aoMode == TriState.TRUE || (aoMode == TriState.DEFAULT && this.defaultAO));
-		final boolean emissive = quad.emissive();
-		final boolean vanillaShade = quad.shadeMode() == ShadeMode.VANILLA;
-        final ChunkSectionLayer quadRenderLayer = quad.renderLayer();
-        final ChunkSectionLayer renderLayer = quadRenderLayer == null ? defaultRenderLayer : quadRenderLayer;
-		final VertexConsumer vertexConsumer = getVertexConsumer(renderLayer);
+		final boolean emissive = mat.emissive();
+		final boolean vanillaShade = mat.shadeMode() == ShadeMode.VANILLA;
 
 		LightPipeline lightPipeline = ao ? this.smoothLightPipeline : this.flatLightPipeline;
 
-		tintQuad(quad);
+		colorizeQuad(quad, colorIndex);
 		shadeQuad(quad, lightPipeline, emissive, vanillaShade);
 		copyLightData(quad);
         bufferQuad(quad, vertexConsumer);
 	}
 
 	private void copyLightData(MutableQuadViewImpl quad) {
-        for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 4; i++) {
 			quad.lightmap(i, this.quadLightData.lm[i]);
 		}
 	}

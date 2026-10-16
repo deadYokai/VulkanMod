@@ -1,7 +1,6 @@
 package net.vulkanmod.config.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -78,13 +77,13 @@ public abstract class VAbstractWidget extends GuiElement {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+    public boolean mouseClicked(double x, double y, int button) {
         if (this.active && this.visible) {
-            if (this.isValidClickButton(event.button())) {
-                boolean clicked = this.clicked(event.x(), event.y());
+            if (this.isValidClickButton(button)) {
+                boolean clicked = this.clicked(x,y);
                 if (clicked) {
                     this.playDownSound(Minecraft.getInstance().getSoundManager());
-                    this.onClick(event.x(), event.y());
+                    this.onClick(x, y);
                     return true;
                 }
             }
@@ -103,9 +102,9 @@ public abstract class VAbstractWidget extends GuiElement {
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (this.isValidClickButton(event.button())) {
-            this.onRelease(event.x(), event.y());
+    public boolean mouseReleased(double x, double y, int button) {
+        if (this.isValidClickButton(button)) {
+            this.onRelease(x, y);
             return true;
         } else {
             return false;
@@ -117,9 +116,9 @@ public abstract class VAbstractWidget extends GuiElement {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double d, double e) {
-        if (this.isValidClickButton(event.button())) {
-            this.onDrag(event.x(), event.y(), d, e);
+    public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+        if (this.isValidClickButton(button)) {
+            this.onDrag(x, y, dx, dy);
             return true;
         } else {
             return false;

@@ -3,7 +3,7 @@ package net.vulkanmod.render.shader;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.RenderType;
 import net.vulkanmod.render.chunk.build.thread.ThreadBuilderPack;
 import net.vulkanmod.render.vertex.CustomVertexFormat;
 import net.vulkanmod.render.vertex.TerrainRenderType;
@@ -33,7 +33,7 @@ public abstract class PipelineManager {
 
     private static void createBasicPipelines() {
         terrainShader = createPipeline("terrain", "basic", PipelineConfigs.TERRAIN, CustomVertexFormat.COMPRESSED_TERRAIN);
-        terrainShaderEarlyZ = createPipeline("terrain_earlyZ", "basic", CustomVertexFormat.COMPRESSED_TERRAIN);
+        terrainShaderEarlyZ = createPipeline("terrain_earlyz", "basic", CustomVertexFormat.COMPRESSED_TERRAIN);
         fastBlitPipeline = createPipeline("blit", "basic/blit", CustomVertexFormat.NONE);
         cloudsPipeline = createPipeline("clouds", "basic/clouds", DefaultVertexFormat.POSITION_COLOR);
     }

@@ -2,17 +2,15 @@ package net.vulkanmod.config.gui;
 
 import com.google.common.collect.Lists;
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.vulkanmod.Initializer;
 import net.vulkanmod.config.UpdateChecker;
@@ -320,11 +318,11 @@ public class VOptionScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+    public boolean mouseClicked(double x, double y, int button) {
         for (GuiEventListener element : this.children()) {
-            if (element.mouseClicked(event, bl)) {
+            if (element.mouseClicked(x, y, button)) {
                 this.setFocused(element);
-                if (event.button() == 0) {
+                if (button == 0) {
                     this.setDragging(true);
                 }
 
@@ -337,11 +335,11 @@ public class VOptionScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
+    public boolean mouseReleased(double x, double y, int button) {
         this.setDragging(false);
         this.updateState();
-        return this.getChildAt(event.x(), event.y())
-                   .filter(guiEventListener -> guiEventListener.mouseReleased(event))
+        return this.getChildAt(x, y)
+                   .filter(guiEventListener -> guiEventListener.mouseReleased(x, y, button))
                    .isPresent();
     }
 
@@ -487,8 +485,8 @@ public class VOptionScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent keyEvent) {
-        if (keyEvent.hasControlDown() && keyEvent.key() == GLFW.GLFW_KEY_L) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if ((modifiers & GLFW.GLFW_MOD_CONTROL) != 0 && scanCode == GLFW.GLFW_KEY_L) {
             this.setFocused(searchField);
             searchField.setFocused(true);
             searchField.setSelected(true);
@@ -496,7 +494,7 @@ public class VOptionScreen extends Screen {
             return true;
         }
 
-        if (keyEvent.key() == GLFW.GLFW_KEY_ESCAPE && this.isSearchActive) {
+        if (scanCode == GLFW.GLFW_KEY_ESCAPE && this.isSearchActive) {
             this.isSearchActive = false;
             this.searchField.setInput("");
             this.searchField.setFocused(false);
@@ -507,13 +505,13 @@ public class VOptionScreen extends Screen {
 
 
         if (!this.searchField.focused
-                && keyEvent.key() == GLFW.GLFW_KEY_P
-                && keyEvent.hasShiftDown()) {
+                && scanCode == GLFW.GLFW_KEY_P
+                && (modifiers & GLFW.GLFW_MOD_SHIFT) != 0) {
             Minecraft.getInstance().setScreen(new VideoSettingsScreen(this, Minecraft.getInstance(), Minecraft.getInstance().options));
 
             return false;
         }
 
-        return super.keyPressed(keyEvent);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

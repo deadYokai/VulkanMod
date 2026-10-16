@@ -1,78 +1,55 @@
 package net.vulkanmod.render.chunk.build.frapi;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.fabricmc.fabric.api.renderer.v1.mesh.MutableMesh;
-import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.fabricmc.fabric.api.renderer.v1.render.BlockVertexConsumerProvider;
-import net.fabricmc.fabric.api.renderer.v1.render.FabricBlockModelRenderer;
-import net.fabricmc.fabric.api.renderer.v1.render.ItemRenderTypeGetter;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderLayerHelper;
-import net.fabricmc.fabric.mixin.client.indigo.renderer.BlockRenderDispatcherAccessor;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.block.ModelBlockRenderer;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.core.BlockPos;
+import java.util.HashMap;
+
+import net.minecraft.resources.ResourceLocation;
 
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.state.BlockState;
-import net.vulkanmod.render.chunk.build.frapi.accessor.AccessLayerRenderState;
-import net.vulkanmod.render.chunk.build.frapi.mesh.MutableMeshImpl;
-import net.vulkanmod.render.chunk.build.frapi.render.BlockRenderContext;
-import net.vulkanmod.render.chunk.build.frapi.render.SimpleBlockRenderContext;
+import net.fabricmc.fabric.api.renderer.v1.material.MaterialFinder;
+import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
+import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
+import net.vulkanmod.render.chunk.build.frapi.material.MaterialFinderImpl;
+import net.vulkanmod.render.chunk.build.frapi.material.RenderMaterialImpl;
+import net.vulkanmod.render.chunk.build.frapi.mesh.MeshBuilderImpl;
 
 /**
- * Fabric renderer implementation.
+ * The Fabric default renderer implementation. Supports all
+ * features defined in the API except shaders and offers no special materials.
  */
 public class VulkanModRenderer implements Renderer {
 	public static final VulkanModRenderer INSTANCE = new VulkanModRenderer();
 
+	public static final RenderMaterial MATERIAL_STANDARD = INSTANCE.materialFinder().find();
+
+	static {
+		INSTANCE.registerMaterial(RenderMaterial.MATERIAL_STANDARD, MATERIAL_STANDARD);
+	}
+
+	private final HashMap<ResourceLocation, RenderMaterial> materialMap = new HashMap<>();
+
 	private VulkanModRenderer() {}
 
 	@Override
-	public MutableMesh mutableMesh() {
-		return new MutableMeshImpl();
+	public MeshBuilder meshBuilder() {
+		return new MeshBuilderImpl();
 	}
 
 	@Override
-	public void render(ModelBlockRenderer modelBlockRenderer, BlockAndTintGetter blockAndTintGetter,
-					   BlockStateModel blockStateModel, BlockState blockState, BlockPos blockPos, PoseStack poseStack,
-					   BlockVertexConsumerProvider blockVertexConsumerProvider, boolean cull, long seed, int overlay) {
-		BlockRenderContext.POOL.get().render(blockAndTintGetter, blockStateModel, blockState, blockPos, poseStack, blockVertexConsumerProvider, cull, seed, overlay);
+	public MaterialFinder materialFinder() {
+		return new MaterialFinderImpl();
 	}
 
 	@Override
-	public void render(PoseStack.Pose pose, BlockVertexConsumerProvider blockVertexConsumerProvider, BlockStateModel blockStateModel,
-					   float v, float v1, float v2, int i, int i1, BlockAndTintGetter blockAndTintGetter,
-					   BlockPos blockPos, BlockState blockState) {
-		SimpleBlockRenderContext.POOL.get().bufferModel(pose, blockVertexConsumerProvider, blockStateModel, v, v1, v2, i, i1, blockAndTintGetter, blockPos, blockState);
+	public RenderMaterial materialById(ResourceLocation id) {
+		return materialMap.get(id);
 	}
 
 	@Override
-	public void renderBlockAsEntity(BlockRenderDispatcher blockRenderDispatcher, BlockState state, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay, BlockAndTintGetter blockView, BlockPos pos) {
-		RenderShape blockRenderType = state.getRenderShape();
+	public boolean registerMaterial(ResourceLocation id, RenderMaterial material) {
+		if (materialMap.containsKey(id)) return false;
 
-		if (blockRenderType != RenderShape.INVISIBLE) {
-			BlockStateModel model = blockRenderDispatcher.getBlockModel(state);
-			int tint = ((BlockRenderDispatcherAccessor) blockRenderDispatcher).getBlockColors().getColor(state, null, null, 0);
-			float red = (tint >> 16 & 255) / 255.0F;
-			float green = (tint >> 8 & 255) / 255.0F;
-			float blue = (tint & 255) / 255.0F;
-			FabricBlockModelRenderer.render(poseStack.last(), RenderLayerHelper.entityDelegate(bufferSource), model, red, green, blue, light, overlay, blockView, pos, state);
-		}
-	}
-
-	@Override
-	public QuadEmitter getLayerRenderStateEmitter(ItemStackRenderState.LayerRenderState layer) {
-		return ((AccessLayerRenderState) layer).getMutableMesh().emitter();
-	}
-
-	@Override
-	public void setLayerRenderTypeGetter(ItemStackRenderState.LayerRenderState layer,
-										 ItemRenderTypeGetter renderTypeGetter) {
-		((AccessLayerRenderState) layer).setRenderTypeGetter(renderTypeGetter);
+		// cast to prevent acceptance of impostor implementations
+		materialMap.put(id, (RenderMaterialImpl) material);
+		return true;
 	}
 }

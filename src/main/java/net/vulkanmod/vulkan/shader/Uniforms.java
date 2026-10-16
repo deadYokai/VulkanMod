@@ -1,14 +1,20 @@
 package net.vulkanmod.vulkan.shader;
 
+import com.mojang.blaze3d.shaders.FogShape;
+import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.TextureFilteringMethod;
 import net.vulkanmod.vulkan.VRenderSystem;
 import net.vulkanmod.vulkan.util.MappedBuffer;
 
 import java.util.function.Supplier;
 
 public class Uniforms {
+
+    /**
+     * Fog start/end used for the fog component that is inactive. Any distance is below this start,
+     * so linear_fog_value() returns 0 for it.
+     */
+    private static final float NO_FOG = Float.MAX_VALUE;
 
     public static Object2ReferenceOpenHashMap<String, Supplier<Integer>> vec1i_uniformMap = new Object2ReferenceOpenHashMap<>();
 
@@ -18,6 +24,10 @@ public class Uniforms {
     public static Object2ReferenceOpenHashMap<String, Supplier<MappedBuffer>> vec4f_uniformMap = new Object2ReferenceOpenHashMap<>();
 
     public static Object2ReferenceOpenHashMap<String, Supplier<MappedBuffer>> mat4f_uniformMap = new Object2ReferenceOpenHashMap<>();
+
+    private static boolean isSphericalFog() {
+        return RenderSystem.getShaderFogShape() == FogShape.SPHERE;
+    }
 
     public static void setupDefaultUniforms() {
 
@@ -29,20 +39,28 @@ public class Uniforms {
 
         //Vec1i
         vec1i_uniformMap.put("EndPortalLayers", () -> 15);
-        vec1i_uniformMap.put("UseRgss", () -> Minecraft.getInstance().options.textureFiltering().get() == TextureFilteringMethod.RGSS ? 1 : 0);
+        vec1i_uniformMap.put("FogShape", () -> RenderSystem.getShaderFogShape().getIndex());
         vec1i_uniformMap.put("CurrentTime", VRenderSystem::getCurrentTime);
+        // Texture filtering choice introduced after 1.21.1: always plain nearest sampling here
+        vec1i_uniformMap.put("UseRgss", () -> 0);
 
         //Vec1
-        vec1f_uniformMap.put("FogStart", () -> VRenderSystem.getFogData().renderDistanceStart);
-        vec1f_uniformMap.put("FogEnd", () -> VRenderSystem.getFogData().renderDistanceEnd);
-        vec1f_uniformMap.put("FogEnvironmentalStart", () -> VRenderSystem.getFogData().environmentalStart);
-        vec1f_uniformMap.put("FogEnvironmentalEnd", () -> VRenderSystem.getFogData().environmentalEnd);
-        vec1f_uniformMap.put("FogRenderDistanceStart", () -> VRenderSystem.getFogData().renderDistanceStart);
-        vec1f_uniformMap.put("FogRenderDistanceEnd", () -> VRenderSystem.getFogData().renderDistanceEnd);
-        vec1f_uniformMap.put("FogSkyEnd", () -> VRenderSystem.getFogData().skyEnd);
-        vec1f_uniformMap.put("FogCloudsEnd", () -> VRenderSystem.getFogData().cloudEnd);
-//        vec1f_uniformMap.put("LineWidth", RenderSystem::getShaderLineWidth);
+        // Legacy (1.21.1) fog uniforms
+        vec1f_uniformMap.put("FogStart", RenderSystem::getShaderFogStart);
+        vec1f_uniformMap.put("FogEnd", RenderSystem::getShaderFogEnd);
+        vec1f_uniformMap.put("LineWidth", RenderSystem::getShaderLineWidth);
+        vec1f_uniformMap.put("GameTime", RenderSystem::getShaderGameTime);
+        vec1f_uniformMap.put("GlintAlpha", RenderSystem::getShaderGlintAlpha);
         vec1f_uniformMap.put("AlphaCutout", () -> VRenderSystem.alphaCutout);
+
+        // Split fog model used by the VulkanMod terrain/cloud shaders, derived from the single 1.21.1 fog:
+        // a spherical fog drives the "environmental" pair, a cylindrical fog the "render distance" pair.
+        vec1f_uniformMap.put("FogEnvironmentalStart", () -> isSphericalFog() ? RenderSystem.getShaderFogStart() : NO_FOG);
+        vec1f_uniformMap.put("FogEnvironmentalEnd", () -> isSphericalFog() ? RenderSystem.getShaderFogEnd() : NO_FOG);
+        vec1f_uniformMap.put("FogRenderDistanceStart", () -> isSphericalFog() ? NO_FOG : RenderSystem.getShaderFogStart());
+        vec1f_uniformMap.put("FogRenderDistanceEnd", () -> isSphericalFog() ? NO_FOG : RenderSystem.getShaderFogEnd());
+        vec1f_uniformMap.put("FogSkyEnd", RenderSystem::getShaderFogEnd);
+        vec1f_uniformMap.put("FogCloudsEnd", RenderSystem::getShaderFogEnd);
 
         //Vec2
         vec2f_uniformMap.put("ScreenSize", VRenderSystem::getScreenSize);

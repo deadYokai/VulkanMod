@@ -113,7 +113,7 @@ public class CubeModel {
     public record Polygon(Vertex[] vertices, Vector3fc normal) {
 
         public Polygon(Vertex[] vertices, float u0, float v0, float u1, float v1, float uSize, float vSize, boolean mirror, Direction direction) {
-            this(vertices, (mirror ? mirrorFacing(direction) : direction).getUnitVec3f());
+            this(vertices, (mirror ? mirrorFacing(direction) : direction).step());
 
             // This will force NaN if uSize or vSize are 0
             float l = 0.0F / uSize;

@@ -56,14 +56,14 @@ public class SectionGraph {
 
     public void update(Camera camera, Frustum frustum, boolean spectator) {
         Profiler profiler = Profiler.getMainProfiler();
-        ProfilerFiller mcProfiler = net.minecraft.util.profiling.Profiler.get();
+        ProfilerFiller mcProfiler = net.minecraft.client.Minecraft.getInstance().getProfiler();
 
-        BlockPos blockpos = camera.blockPosition();
+        BlockPos blockpos = camera.getBlockPosition();
 
         mcProfiler.popPush("update");
 
         boolean flag = this.minecraft.smartCull;
-        if (spectator && this.level.getBlockState(blockpos).isSolidRender()) {
+        if (spectator && this.level.getBlockState(blockpos).isSolidRender(this.level, blockpos)) {
             flag = false;
         }
 
@@ -88,13 +88,13 @@ public class SectionGraph {
     }
 
     private void initializeQueueForFullUpdate(Camera camera) {
-        Vec3 vec3 = camera.position();
-        BlockPos blockpos = camera.blockPosition();
+        Vec3 vec3 = camera.getPosition();
+        BlockPos blockpos = camera.getBlockPosition();
         RenderSection renderSection = this.sectionGrid.getSectionAtBlockPos(blockpos);
 
         if (renderSection == null) {
-            boolean flag = blockpos.getY() > this.level.getMinY();
-            int y = flag ? this.level.getMaxY() - 8 : this.level.getMinY() + 8;
+            boolean flag = blockpos.getY() > this.level.getMinBuildHeight();
+            int y = flag ? this.level.getMaxBuildHeight() - 8 : this.level.getMinBuildHeight() + 8;
             int x = Mth.floor(vec3.x / 16.0D) * 16;
             int z = Mth.floor(vec3.z / 16.0D) * 16;
 

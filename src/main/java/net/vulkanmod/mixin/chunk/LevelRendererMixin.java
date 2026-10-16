@@ -1,8 +1,5 @@
 package net.vulkanmod.mixin.chunk;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
-import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.client.Camera;
@@ -11,21 +8,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
-import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.client.renderer.state.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.BlockDestructionProgress;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
 import net.vulkanmod.render.chunk.WorldRenderer;
-import net.vulkanmod.render.profiling.Profiler;
 import net.vulkanmod.render.vertex.TerrainRenderType;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -36,19 +27,19 @@ import java.util.SortedSet;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin {
-    @Shadow @Final private Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress;
 
-    @Unique private WorldRenderer worldRenderer;
+    @Shadow @Final
+    private RenderBuffers renderBuffers;
 
-    @Unique double camX, camY, camZ;
-    @Unique Matrix4f modelView, projection;
+    @Shadow @Final
+    private Long2ObjectMap<SortedSet<BlockDestructionProgress>> destructionProgress;
+
+    @Unique
+    private WorldRenderer worldRenderer;
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void init(Minecraft minecraft, EntityRenderDispatcher entityRenderDispatcher,
-                      BlockEntityRenderDispatcher blockEntityRenderDispatcher, RenderBuffers renderBuffers,
-                      LevelRenderState levelRenderState, FeatureRenderDispatcher featureRenderDispatcher,
-                      CallbackInfo ci) {
-        this.worldRenderer = WorldRenderer.init(entityRenderDispatcher, blockEntityRenderDispatcher, renderBuffers, levelRenderState, featureRenderDispatcher);
+    private void init(Minecraft minecraft, EntityRenderDispatcher entityRenderDispatcher, BlockEntityRenderDispatcher blockEntityRenderDispatcher, RenderBuffers renderBuffers, CallbackInfo ci) {
+        this.worldRenderer = WorldRenderer.init(this.renderBuffers);
     }
 
     @Inject(method = "setLevel", at = @At("RETURN"))
@@ -61,20 +52,12 @@ public abstract class LevelRendererMixin {
         this.worldRenderer.allChanged();
     }
 
-    @Inject(method = "extractVisibleBlockEntities", at = @At("HEAD"), cancellable = true)
-    private void onExtractVisibleBlockEntities(Camera camera, float partialTick, LevelRenderState levelRenderState,
-                                               CallbackInfo ci) {
-        this.worldRenderer.setPartialTick(partialTick);
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;checkPoseStack(Lcom/mojang/blaze3d/vertex/PoseStack;)V", ordinal = 1, shift = At.Shift.BEFORE))
+    private void renderBlockEntities(DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
+        Vec3 pos = camera.getPosition();
+        PoseStack poseStack = new PoseStack();
 
-        ci.cancel();
-    }
-
-    @Inject(method = "submitBlockEntities", at = @At(value = "RETURN"), cancellable = true)
-    private void onSubmitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState,
-                                     SubmitNodeStorage submitNodeStorage, CallbackInfo ci) {
-        this.worldRenderer.renderBlockEntities(poseStack, levelRenderState, submitNodeStorage, this.destructionProgress);
-
-        ci.cancel();
+        this.worldRenderer.renderBlockEntities(poseStack, pos.x(), pos.y(), pos.z(), this.destructionProgress, deltaTracker.getGameTimeDeltaPartialTick(false));
     }
 
     /**
@@ -82,9 +65,8 @@ public abstract class LevelRendererMixin {
      * @reason
      */
     @Overwrite
-    private void cullTerrain(Camera camera, Frustum frustum, boolean spectator) {
-        // TODO: port capture frustum
-        this.worldRenderer.setupRenderer(camera, frustum, false, spectator);
+    private void setupRender(Camera camera, Frustum frustum, boolean isCapturedFrustum, boolean spectator) {
+        this.worldRenderer.setupRenderer(camera, frustum, isCapturedFrustum, spectator);
     }
 
     /**
@@ -92,46 +74,28 @@ public abstract class LevelRendererMixin {
      * @reason
      */
     @Overwrite
-    public boolean isSectionCompiledAndVisible(BlockPos blockPos) {
+    public boolean isSectionCompiled(BlockPos blockPos) {
         return this.worldRenderer.isSectionCompiled(blockPos);
     }
 
-    @Inject(method = "renderLevel", at = @At("HEAD"))
-    private void updateMatrices(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker,
-                                boolean bl, Camera camera, Matrix4f modelView, Matrix4f projection, Matrix4f matrix4f,
-                                GpuBufferSlice gpuBufferSlice, Vector4f vector4f, boolean bl2, CallbackInfo ci) {
-        this.modelView = modelView;
-        this.projection = projection;
-    }
-
+    /**
+     * @author
+     * @reason
+     */
     @Overwrite
-    private ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double camX, double camY, double camZ) {
-        this.camX = camX;
-        this.camY = camY;
-        this.camZ = camZ;
-
-        return null;
-    }
-
-    @Redirect(method = "method_62214", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;renderGroup(Lnet/minecraft/client/renderer/chunk/ChunkSectionLayerGroup;Lcom/mojang/blaze3d/textures/GpuSampler;)V"))
-    private void renderSectionLayer(ChunkSectionsToRender instance, ChunkSectionLayerGroup chunkSectionLayerGroup, GpuSampler gpuSampler) {
-        if (chunkSectionLayerGroup == ChunkSectionLayerGroup.OPAQUE) {
-            Profiler profiler = Profiler.getMainProfiler();
-            profiler.push("Opaque_terrain");
-
-            this.worldRenderer.renderSectionLayer(TerrainRenderType.SOLID, camX, camY, camZ, modelView, projection);
-            this.worldRenderer.renderSectionLayer(TerrainRenderType.CUTOUT, camX, camY, camZ, modelView, projection);
-        }
-        else if (chunkSectionLayerGroup == ChunkSectionLayerGroup.TRANSLUCENT) {
-            Profiler profiler = Profiler.getMainProfiler();
-            profiler.pop();
-            profiler.push("Translucent_terrain");
-
-            this.worldRenderer.renderSectionLayer(TerrainRenderType.TRANSLUCENT, camX, camY, camZ, modelView, projection);
-
-            profiler.pop();
+    private void renderSectionLayer(RenderType renderType, double camX, double camY, double camZ, Matrix4f modelView, Matrix4f projectionMatrix) {
+        // Vanilla draws cutout_mipped and then cutout. The chunk pipeline merges both into the
+        // CUTOUT terrain layer, so it must only be drawn once (at the cutout_mipped step).
+        if (renderType == RenderType.cutout()) {
+            return;
         }
 
+        TerrainRenderType terrainRenderType = TerrainRenderType.get(renderType);
+        if (terrainRenderType == null) {
+            return;
+        }
+
+        this.worldRenderer.renderSectionLayer(terrainRenderType, camX, camY, camZ, modelView, projectionMatrix);
     }
 
     /**
@@ -139,7 +103,7 @@ public abstract class LevelRendererMixin {
      * @reason
      */
     @Overwrite
-    public void onChunkReadyToRender(ChunkPos chunkPos) {
+    public void onChunkLoaded(ChunkPos chunkPos) {
     }
 
     /**
@@ -178,7 +142,7 @@ public abstract class LevelRendererMixin {
         return this.worldRenderer.getVisibleSectionsCount();
     }
 
-    @Redirect(method = "addWeatherPass", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;getDepthFar()F"))
+    @Redirect(method = "renderWorldBorder", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;getDepthFar()F"))
     private float getRenderDistanceZFar(GameRenderer instance) {
         return instance.getRenderDistance() * 4F;
     }

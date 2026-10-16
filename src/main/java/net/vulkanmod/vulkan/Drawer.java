@@ -1,7 +1,6 @@
 package net.vulkanmod.vulkan;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.vulkanmod.render.engine.VkGpuBuffer;
 import net.vulkanmod.vulkan.memory.*;
 import net.vulkanmod.vulkan.memory.buffer.Buffer;
 import net.vulkanmod.vulkan.memory.buffer.IndexBuffer;
@@ -31,8 +30,6 @@ public class Drawer {
     private int framesNum;
     private VertexBuffer[] vertexBuffers;
     private IndexBuffer[] indexBuffers;
-
-    private final GpuBuffers gpuBuffers = new GpuBuffers();
 
     private final AutoIndexBuffer quadsIndexBuffer;
     private final AutoIndexBuffer quadsIntIndexBuffer;
@@ -85,8 +82,6 @@ public class Drawer {
         }
         this.uniformBuffers = new UniformBuffer[framesNum];
         Arrays.setAll(this.uniformBuffers, i -> new UniformBuffer(INITIAL_UB_SIZE, MemoryTypes.HOST_MEM));
-
-        this.getGpuBuffers().createBuffers(this.vertexBuffers, this.indexBuffers);
     }
 
     public void resetBuffers(int currentFrame) {
@@ -202,6 +197,8 @@ public class Drawer {
     }
 
     public AutoIndexBuffer getAutoIndexBuffer(VertexFormat.Mode mode, int vertexCount) {
+        // 1.21.1 VertexFormat.Mode: LINES, LINE_STRIP, DEBUG_LINES, DEBUG_LINE_STRIP,
+        // TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN, QUADS (no POINTS)
         return switch (mode) {
             case QUADS -> {
                 int indexCount = vertexCount * 3 / 2;
@@ -211,41 +208,9 @@ public class Drawer {
             }
             case LINES -> this.linesIndexBuffer;
             case TRIANGLE_FAN -> this.triangleFanIndexBuffer;
-            case TRIANGLE_STRIP -> this.triangleStripIndexBuffer;
+            case TRIANGLE_STRIP, LINE_STRIP -> this.triangleStripIndexBuffer;
             case DEBUG_LINE_STRIP -> this.debugLineStripIndexBuffer;
-            case POINTS -> null;
             case TRIANGLES, DEBUG_LINES -> null;
-		};
-    }
-
-    public GpuBuffers getGpuBuffers() {
-        return gpuBuffers;
-    }
-
-    public class GpuBuffers {
-        VkGpuBuffer[] vertexBuffers;
-        VkGpuBuffer[] indexBuffers;
-
-        public void createBuffers(VertexBuffer[] vertexBuffers, IndexBuffer[] indexBuffers) {
-            this.vertexBuffers = new VkGpuBuffer[vertexBuffers.length];
-
-            for (int i = 0; i < vertexBuffers.length; i++) {
-                this.vertexBuffers[i] = VkGpuBuffer.from(vertexBuffers[i]);
-            }
-
-            this.indexBuffers = new VkGpuBuffer[indexBuffers.length];
-
-            for (int i = 0; i < vertexBuffers.length; i++) {
-                this.indexBuffers[i] = VkGpuBuffer.from(indexBuffers[i]);
-            }
-        }
-
-        public VkGpuBuffer getVertexBuffer() {
-            return vertexBuffers[Drawer.this.currentFrame];
-        }
-
-        public VkGpuBuffer getIndexBuffer() {
-            return indexBuffers[Drawer.this.currentFrame];
-        }
+        };
     }
 }

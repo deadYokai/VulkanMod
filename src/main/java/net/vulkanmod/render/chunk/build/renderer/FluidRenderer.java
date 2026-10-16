@@ -74,10 +74,10 @@ public class FluidRenderer implements FluidRendering.DefaultRenderer {
     }
 
     private boolean isFaceOccludedByState(BlockGetter blockGetter, float h, Direction direction, BlockPos blockPos, BlockState blockState) {
-        mBlockPos.set(blockPos).offset(Direction.DOWN.getUnitVec3i());
+        mBlockPos.set(blockPos).offset(Direction.DOWN.getNormal());
 
         if (blockState.canOcclude()) {
-            VoxelShape occlusionShape = blockState.getOcclusionShape();
+            VoxelShape occlusionShape = blockState.getOcclusionShape(blockGetter, mBlockPos);
 
             if (occlusionShape == Shapes.block()) {
                 return direction != Direction.UP;
@@ -86,7 +86,7 @@ public class FluidRenderer implements FluidRendering.DefaultRenderer {
             }
 
             VoxelShape voxelShape = Shapes.box(0.0, 0.0, 0.0, 1.0, h, 1.0);
-            return Shapes.blockOccludes(voxelShape, occlusionShape, direction);
+            return Shapes.blockOccudes(voxelShape, occlusionShape, direction);
         } else {
             return false;
         }
@@ -164,14 +164,14 @@ public class FluidRenderer implements FluidRendering.DefaultRenderer {
             seHeight = 1.0F;
             swHeight = 1.0F;
         } else {
-            float s = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.NORTH.getUnitVec3i()), northState);
-            float t = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.SOUTH.getUnitVec3i()), southState);
-            float u = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.EAST.getUnitVec3i()), eastState);
-            float v = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.WEST.getUnitVec3i()), westState);
-            neHeight = this.calculateAverageHeight(region, fluid, height, s, u, mBlockPos.set(blockPos).offset(Direction.NORTH.getUnitVec3i()).offset(Direction.EAST.getUnitVec3i()));
-            nwHeight = this.calculateAverageHeight(region, fluid, height, s, v, mBlockPos.set(blockPos).offset(Direction.NORTH.getUnitVec3i()).offset(Direction.WEST.getUnitVec3i()));
-            seHeight = this.calculateAverageHeight(region, fluid, height, t, u, mBlockPos.set(blockPos).offset(Direction.SOUTH.getUnitVec3i()).offset(Direction.EAST.getUnitVec3i()));
-            swHeight = this.calculateAverageHeight(region, fluid, height, t, v, mBlockPos.set(blockPos).offset(Direction.SOUTH.getUnitVec3i()).offset(Direction.WEST.getUnitVec3i()));
+            float s = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.NORTH.getNormal()), northState);
+            float t = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.SOUTH.getNormal()), southState);
+            float u = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.EAST.getNormal()), eastState);
+            float v = this.getHeight(region, fluid, mBlockPos.set(blockPos).offset(Direction.WEST.getNormal()), westState);
+            neHeight = this.calculateAverageHeight(region, fluid, height, s, u, mBlockPos.set(blockPos).offset(Direction.NORTH.getNormal()).offset(Direction.EAST.getNormal()));
+            nwHeight = this.calculateAverageHeight(region, fluid, height, s, v, mBlockPos.set(blockPos).offset(Direction.NORTH.getNormal()).offset(Direction.WEST.getNormal()));
+            seHeight = this.calculateAverageHeight(region, fluid, height, t, u, mBlockPos.set(blockPos).offset(Direction.SOUTH.getNormal()).offset(Direction.EAST.getNormal()));
+            swHeight = this.calculateAverageHeight(region, fluid, height, t, v, mBlockPos.set(blockPos).offset(Direction.SOUTH.getNormal()).offset(Direction.WEST.getNormal()));
         }
 
         float x0 = (posX & 15);
@@ -218,6 +218,18 @@ public class FluidRenderer implements FluidRendering.DefaultRenderer {
                 u3 = sprite.getU(0.5F + (aj - ai));
                 v3 = sprite.getV(0.5F + (-aj - ai));
             }
+
+            float uA = (u0 + u1 + u2 + u3) / 4.0F;
+            float vA = (v0 + v1 + v2 + v3) / 4.0F;
+            float ai = sprites[0].uvShrinkRatio();
+            u0 = Mth.lerp(ai, u0, uA);
+            u1 = Mth.lerp(ai, u1, uA);
+            u2 = Mth.lerp(ai, u2, uA);
+            u3 = Mth.lerp(ai, u3, uA);
+            v0 = Mth.lerp(ai, v0, vA);
+            v1 = Mth.lerp(ai, v1, vA);
+            v2 = Mth.lerp(ai, v2, vA);
+            v3 = Mth.lerp(ai, v3, vA);
 
             float brightness = brightnessUp;
 
@@ -410,7 +422,7 @@ public class FluidRenderer implements FluidRendering.DefaultRenderer {
     private float getHeight(BlockAndTintGetter blockAndTintGetter, Fluid fluid, BlockPos blockPos, BlockState adjBlockState) {
         FluidState adjFluidState = adjBlockState.getFluidState();
         if (fluid.isSame(adjFluidState.getType())) {
-            BlockState blockState2 = blockAndTintGetter.getBlockState(blockPos.offset(Direction.UP.getUnitVec3i()));
+            BlockState blockState2 = blockAndTintGetter.getBlockState(blockPos.offset(Direction.UP.getNormal()));
             return fluid.isSame(blockState2.getFluidState().getType()) ? 1.0F : adjFluidState.getOwnHeight();
         } else {
             return !adjBlockState.isSolid() ? 0.0F : -1.0f;

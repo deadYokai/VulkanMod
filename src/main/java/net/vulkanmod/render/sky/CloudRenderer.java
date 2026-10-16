@@ -1,12 +1,12 @@
 package net.vulkanmod.render.sky;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Mth;
@@ -23,7 +23,7 @@ import org.lwjgl.opengl.GL11;
 import java.io.IOException;
 
 public class CloudRenderer {
-    private static final Identifier TEXTURE_LOCATION = Identifier.withDefaultNamespace("textures/environment/clouds.png");
+    private static final ResourceLocation TEXTURE_LOCATION = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
 
     private static final int DIR_NEG_Y_BIT = 1 << 0;
     private static final int DIR_POS_Y_BIT = 1 << 1;
@@ -188,8 +188,7 @@ public class CloudRenderer {
 
         BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        int cloudRange = Math.min(Minecraft.getInstance().options.cloudRange().get(), 128) * 16;
-        int renderDistance = Mth.ceil(cloudRange / 12.0F);
+        int renderDistance = 32;
         boolean insideClouds = this.prevCloudY == Y_INSIDE_CLOUDS;
 
         if (this.prevCloudsType == CloudStatus.FANCY) {
@@ -284,7 +283,7 @@ public class CloudRenderer {
         bufferBuilder.addVertex(x, y, z).setColor(color);
     }
 
-    private static CloudGrid createCloudGrid(Identifier textureLocation) {
+    private static CloudGrid createCloudGrid(ResourceLocation textureLocation) {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
         try {
@@ -297,7 +296,7 @@ public class CloudRenderer {
                 int height = image.getHeight();
                 Validate.isTrue(width == height, "Image width and height must be the same");
 
-                int[] pixels = image.getPixelsABGR();
+                int[] pixels = image.getPixelsRGBA();
 
                 return new CloudGrid(pixels, width);
             }

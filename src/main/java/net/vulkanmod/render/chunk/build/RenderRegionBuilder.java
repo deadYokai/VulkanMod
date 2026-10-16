@@ -44,7 +44,7 @@ public class RenderRegionBuilder {
         long biomeZoomSeed = BiomeManagerExtended.of(level.getBiomeManager()).getBiomeZoomSeed();
         BiomeData biomeData = new BiomeData(biomeZoomSeed, minSecX, minSecY, minSecZ);
 
-        final int minHeightSec = level.getMinY() >> 4;
+        final int minHeightSec = level.getMinBuildHeight() >> 4;
         for (int x = minSecX; x <= maxSecX; ++x) {
             for (int z = minSecZ; z <= maxSecZ; ++z) {
                 LevelChunk levelChunk1 = getLevelChunk(level, x, z);

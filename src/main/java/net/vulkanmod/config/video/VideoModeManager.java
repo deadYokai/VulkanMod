@@ -139,7 +139,7 @@ public abstract class VideoModeManager {
 
 
     public static Monitor findBestMonitor(final Window window) {
-        long windowMonitor = GLFW.glfwGetWindowMonitor(window.handle());
+        long windowMonitor = GLFW.glfwGetWindowMonitor(window.getWindow());
         if (windowMonitor != 0L) {
             return monitors.get(windowMonitor);
         } else {

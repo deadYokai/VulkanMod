@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.vulkanmod.config.gui.render.GuiRenderer;
 import net.vulkanmod.config.option.Option;
@@ -88,32 +87,32 @@ public abstract class OptionWidget<O extends Option<?>> extends VAbstractWidget 
     protected abstract void onDrag(double mouseX, double mouseY, double deltaX, double deltaY);
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (this.isValidClickButton(event.button())) {
-            this.onDrag(event.x(), event.y(), deltaX, deltaY);
+    public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+        if (this.isValidClickButton(button)) {
+            this.onDrag(x, y, dx, dy);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+    public boolean mouseClicked(double x, double y, int button) {
         if (!this.active || !this.visible) {
             return false;
         }
 
-        if (this.isValidClickButton(event.button()) && this.clicked(event.x(), event.y())) {
+        if (this.isValidClickButton(button) && this.clicked(x,y)) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
-            this.onClick(event.x(), event.y());
+            this.onClick(x, y);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (this.isValidClickButton(event.button())) {
-            this.onRelease(event.x(), event.y());
+    public boolean mouseReleased(double x, double y, int button) {
+        if (this.isValidClickButton(button)) {
+            this.onRelease(x, y);
             return true;
         }
         return false;

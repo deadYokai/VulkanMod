@@ -274,7 +274,7 @@ public class GraphicsPipeline extends Pipeline {
         final VkVertexInputBindingDescription.Buffer bindingDescriptions;
 
         VertexInputDescription(VertexFormat vertexFormat) {
-            if (vertexFormat != DefaultVertexFormat.EMPTY) {
+            if (vertexFormat != null && !vertexFormat.getElements().isEmpty()) {
                 this.bindingDescriptions = getBindingDescription(vertexFormat);
                 this.attributeDescriptions = getAttributeDescriptions(vertexFormat);
             }

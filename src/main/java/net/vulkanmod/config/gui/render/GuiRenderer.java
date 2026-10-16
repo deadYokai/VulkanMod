@@ -1,16 +1,16 @@
 package net.vulkanmod.config.gui.render;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import org.joml.Matrix3x2f;
+import org.joml.Matrix4f;
 
 import java.util.List;
 
@@ -112,11 +112,37 @@ public abstract class GuiRenderer {
         return maxWidth;
     }
 
-    public static void submitPolygon(RenderPipeline renderPipeline, TextureSetup textureSetup, float[][] vertices, int color) {
-        guiGraphics.guiRenderState.submitGuiElement(
-                new PolygonRenderState(
-                        renderPipeline, textureSetup, new Matrix3x2f(), vertices, color, guiGraphics.scissorStack.peek()
-                )
-        );
+    /**
+     * Draws a filled convex polygon (triangle fan) in GUI coordinates.
+     * 1.21.1 has no render-state queue for custom GUI elements, so this draws immediately;
+     * the batched GUI draws are flushed first to keep the draw order.
+     *
+     * @param vertices array of {x, y} points
+     * @param color    ARGB color
+     */
+    public static void submitPolygon(float[][] vertices, int color) {
+        if (vertices.length < 3) {
+            return;
+        }
+
+        guiGraphics.flush();
+
+        Matrix4f matrix = guiGraphics.pose().last().pose();
+
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+        for (int i = 1; i < vertices.length - 1; ++i) {
+            builder.addVertex(matrix, vertices[0][0], vertices[0][1], 0.0f).setColor(color);
+            builder.addVertex(matrix, vertices[i][0], vertices[i][1], 0.0f).setColor(color);
+            builder.addVertex(matrix, vertices[i + 1][0], vertices[i + 1][1], 0.0f).setColor(color);
+        }
+
+        BufferUploader.drawWithShader(builder.buildOrThrow());
+
+        RenderSystem.disableBlend();
     }
 }

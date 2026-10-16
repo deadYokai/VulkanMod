@@ -28,16 +28,6 @@ public abstract class ColorHelper {
 
 	private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
-	/**
-	 * Component-wise max.
-	 */
-	public static int maxLight(int l0, int l1) {
-		if (l0 == 0) return l1;
-		if (l1 == 0) return l0;
-
-		return Math.max(l0 & 0xFFFF, l1 & 0xFFFF) | Math.max(l0 & 0xFFFF0000, l1 & 0xFFFF0000);
-	}
-
 	/** Component-wise multiply. Components need to be in same order in both inputs! */
 	public static int multiplyColor(int color1, int color2) {
 		if (color1 == -1) {

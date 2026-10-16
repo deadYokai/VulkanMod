@@ -1,6 +1,6 @@
 package net.vulkanmod.vulkan;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.vulkanmod.Initializer;
 import net.vulkanmod.vulkan.device.Device;
 import net.vulkanmod.vulkan.device.DeviceManager;

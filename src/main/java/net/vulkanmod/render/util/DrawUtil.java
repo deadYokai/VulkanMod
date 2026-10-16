@@ -1,6 +1,6 @@
 package net.vulkanmod.render.util;
 
-import com.mojang.blaze3d.ProjectionType;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.vulkanmod.vulkan.Renderer;
@@ -13,6 +13,28 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
 public class DrawUtil {
+
+    public static void blitToScreen() {
+        fastBlit();
+    }
+
+    /**
+     * Draws a fullscreen triangle with the bound texture 0 using the fast blit pipeline.
+     */
+    public static void fastBlit() {
+        GraphicsPipeline blitPipeline = net.vulkanmod.render.shader.PipelineManager.getFastBlitPipeline();
+
+        VRenderSystem.disableCull();
+        VRenderSystem.setPrimitiveTopologyGL(org.lwjgl.opengl.GL11.GL_TRIANGLES);
+
+        Renderer renderer = Renderer.getInstance();
+        renderer.bindGraphicsPipeline(blitPipeline);
+        renderer.uploadAndBindUBOs(blitPipeline);
+
+        org.lwjgl.vulkan.VK11.vkCmdDraw(Renderer.getCommandBuffer(), 3, 1, 0, 0);
+
+        VRenderSystem.enableCull();
+    }
 
     public static void blitQuad() {
         blitQuad(0.0f, 1.0f, 1.0f, 0.0f);

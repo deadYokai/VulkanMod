@@ -21,7 +21,7 @@ public abstract class UpdateChecker {
         CompletableFuture.supplyAsync(() -> {
             try {
                 String req = "https://api.modrinth.com/v2/project/vulkanmod/version?include_changelog=false";
-                String mcVersion = SharedConstants.getCurrentVersion().name();
+                String mcVersion = SharedConstants.getCurrentVersion().getName();
                 req += "&game_versions=%s".formatted(mcVersion);
 
                 URL url = new URL(req);

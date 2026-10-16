@@ -1,11 +1,9 @@
 package net.vulkanmod.config.gui.widget;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.vulkanmod.config.gui.render.GuiRenderer;
 import net.vulkanmod.config.gui.util.VGuiConstants;
@@ -93,13 +91,13 @@ public class VTextInputWidget extends VAbstractWidget {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent keyEvent) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (!this.focused && !this.selected) return false;
 
-        boolean shift = keyEvent.hasShiftDown();
-        boolean ctrl = keyEvent.hasControlDown();
+        boolean shift = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+        boolean ctrl = (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
 
-        if (keyEvent.key() == GLFW.GLFW_KEY_ENTER || keyEvent.key() == GLFW.GLFW_KEY_KP_ENTER) {
+        if (scanCode == GLFW.GLFW_KEY_ENTER || scanCode == GLFW.GLFW_KEY_KP_ENTER) {
             this.onSearch.accept(this);
             return true;
         }
@@ -108,7 +106,7 @@ public class VTextInputWidget extends VAbstractWidget {
             int start = Math.min(cursorPos, selectionEnd);
             int end = Math.max(cursorPos, selectionEnd);
 
-            if (keyEvent.key() == GLFW.GLFW_KEY_BACKSPACE || keyEvent.key() == GLFW.GLFW_KEY_DELETE) {
+            if (scanCode == GLFW.GLFW_KEY_BACKSPACE || scanCode == GLFW.GLFW_KEY_DELETE) {
                 this.text = text.substring(0, start) + text.substring(end);
                 cursorPos = start;
                 selectionEnd = start;
@@ -117,7 +115,7 @@ public class VTextInputWidget extends VAbstractWidget {
             }
         }
 
-        if (keyEvent.key() == GLFW.GLFW_KEY_BACKSPACE) {
+        if (scanCode == GLFW.GLFW_KEY_BACKSPACE) {
             if (cursorPos > 0) {
                 this.text = text.substring(0, cursorPos - 1) + text.substring(cursorPos);
                 cursorPos--;
@@ -127,7 +125,7 @@ public class VTextInputWidget extends VAbstractWidget {
             return true;
         }
 
-        if (keyEvent.key() == GLFW.GLFW_KEY_DELETE) {
+        if (scanCode == GLFW.GLFW_KEY_DELETE) {
             if (cursorPos < text.length()) {
                 this.text = text.substring(0, cursorPos) + text.substring(cursorPos + 1);
                 this.onSearch.accept(this);
@@ -135,26 +133,26 @@ public class VTextInputWidget extends VAbstractWidget {
             return true;
         }
 
-        if (ctrl && keyEvent.key() == GLFW.GLFW_KEY_A) {
+        if (ctrl && scanCode == GLFW.GLFW_KEY_A) {
             cursorPos = text.length();
             selectionEnd = 0;
             return true;
         }
 
-        if (keyEvent.key() == GLFW.GLFW_KEY_LEFT) {
+        if (scanCode == GLFW.GLFW_KEY_LEFT) {
             if (cursorPos > 0) cursorPos--;
             if (!shift) selectionEnd = cursorPos;
             return true;
         }
-        if (keyEvent.key() == GLFW.GLFW_KEY_RIGHT) {
+        if (scanCode == GLFW.GLFW_KEY_RIGHT) {
             if (cursorPos < text.length()) cursorPos++;
             if (!shift) selectionEnd = cursorPos;
             return true;
         }
 
-        String keyName = GLFW.glfwGetKeyName(keyEvent.key(), keyEvent.scancode());
+        String keyName = GLFW.glfwGetKeyName(keyCode, scanCode);
         if (keyName != null && keyName.length() == 1) {
-            char c = keyEvent.hasShiftDown() ? keyName.toUpperCase().charAt(0) : keyName.charAt(0);
+            char c = shift ? keyName.toUpperCase().charAt(0) : keyName.charAt(0);
 
             if (cursorPos != selectionEnd) {
                 int start = Math.min(cursorPos, selectionEnd);
@@ -207,15 +205,15 @@ public class VTextInputWidget extends VAbstractWidget {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+    public boolean mouseClicked(double x, double y, int button) {
         if (!this.active || !this.visible) return false;
 
-        boolean clicked = this.clicked(event.x(), event.y());
+        boolean clicked = this.clicked(x, y);
         if (clicked) {
             this.setFocused(true);
             this.selected = true;
 
-            int relX = (int) event.x() - (this.x + 8);
+            int relX = (int) x - (this.x + 8);
             int pos = 0;
             for (int i = 0; i < text.length(); i++) {
                 if (Minecraft.getInstance().font.width(text.substring(0, i + 1)) > relX) break;

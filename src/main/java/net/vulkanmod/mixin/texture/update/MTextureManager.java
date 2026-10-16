@@ -1,8 +1,7 @@
 package net.vulkanmod.mixin.texture.update;
 
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.renderer.texture.TickableTexture;
-import net.vulkanmod.Initializer;
+import net.minecraft.client.renderer.texture.Tickable;
 import net.vulkanmod.render.texture.SpriteUpdateUtil;
 import net.vulkanmod.vulkan.Renderer;
 import org.spongepowered.asm.mixin.Final;
@@ -15,17 +14,18 @@ import java.util.Set;
 @Mixin(TextureManager.class)
 public abstract class MTextureManager {
 
-    @Shadow @Final private Set<TickableTexture> tickableTextures;
+    @Shadow @Final private Set<Tickable> tickableTextures;
 
     /**
      * @author
      */
     @Overwrite
     public void tick() {
-        if (!Initializer.CONFIG.textureAnimations)
+        if (!Renderer.getInstance().getSwapChain().hasImages())
             return;
 
-        for (TickableTexture tickable : this.tickableTextures) {
+        //Debug D
+        for (Tickable tickable : this.tickableTextures) {
             tickable.tick();
         }
 

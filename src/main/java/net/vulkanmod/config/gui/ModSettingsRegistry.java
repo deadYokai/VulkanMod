@@ -5,7 +5,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.vulkanmod.Initializer;
 import net.vulkanmod.config.api.VkModSettingsEntryBuilder;
 import net.vulkanmod.config.api.VkModSettingsFactory;
@@ -22,7 +22,7 @@ public class ModSettingsRegistry {
 
     ModSettingsRegistry() {
         ModSettingsEntry vulkanModSettings = new ModSettingsEntry(Component.literal("VulkanMod").withStyle(ChatFormatting.DARK_RED),
-                                                                  () -> Identifier.fromNamespaceAndPath("vulkanmod", "vlogo_transparent.png"),
+                                                                  () -> ResourceLocation.fromNamespaceAndPath("vulkanmod", "vlogo_transparent.png"),
                                                                   Options::getOptionPages,
                                                                   () -> Initializer.CONFIG.write());
         this.addModEntry(vulkanModSettings);

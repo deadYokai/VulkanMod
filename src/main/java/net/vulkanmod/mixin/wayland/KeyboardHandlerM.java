@@ -1,7 +1,6 @@
 package net.vulkanmod.mixin.wayland;
 
 import net.minecraft.client.KeyboardHandler;
-import net.minecraft.client.input.CharacterEvent;
 import net.vulkanmod.config.Platform;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,8 +22,8 @@ public class KeyboardHandlerM {
      * This mixin cancels that char event if the Ctrl modifier is set, thus fixing the issue.
      */
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
-    private void cancelCtrlCharTyped(long window, CharacterEvent event, CallbackInfo ci) {
-        if (Platform.isWayLand() && (event.modifiers() & GLFW.GLFW_MOD_CONTROL) != 0) {
+    private void cancelCtrlCharTyped(long window, int codePoint, int modifiers, CallbackInfo ci) {
+        if (Platform.isWayLand() && (modifiers & GLFW.GLFW_MOD_CONTROL) != 0) {
             ci.cancel();
         }
     }

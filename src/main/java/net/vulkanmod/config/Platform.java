@@ -1,6 +1,6 @@
 package net.vulkanmod.config;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.apache.commons.lang3.SystemUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -73,7 +73,7 @@ public abstract class Platform {
     }
 
     public static boolean isWindows() {
-        return OS == Util.OS.LINUX;
+        return OS == Util.OS.WINDOWS;
     }
 
     public static boolean isLinux() {

@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.14-SNAPSHOT'
+	id 'fabric-loom' version '1.18-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -31,10 +31,10 @@ dependencies {
 
 	includeModule("fabric-api-base")
 	includeModule("fabric-resource-loader-v0")
-	includeModule("fabric-resource-loader-v1")
 	includeModule("fabric-rendering-v1")
 	includeModule("fabric-renderer-api-v1")
 	includeModule("fabric-rendering-fluids-v1")
+	includeModule("fabric-rendering-data-attachment-v1")
 	includeModule("fabric-block-view-api-v2")
 	includeModule("fabric-lifecycle-events-v1")
 	includeModule("fabric-transitive-access-wideners-v1")
@@ -77,6 +77,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
+	it.options.compilerArgs += ['-Xmaxerrs', '100000']
 }
 
 java {

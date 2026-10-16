@@ -17,8 +17,7 @@ public class ThreadBuilderPack {
 
     public static void defaultTerrainBuilderConstructor() {
         terrainBuilderConstructor = renderType -> {
-            int size = TerrainRenderType.getLayer(renderType)
-                                        .bufferSize() / DefaultVertexFormat.BLOCK.getVertexSize();
+            int size = TerrainRenderType.getRenderType(renderType).bufferSize() / DefaultVertexFormat.BLOCK.getVertexSize();
 
             boolean compressedFormat = PipelineManager.terrainVertexFormat == CustomVertexFormat.COMPRESSED_TERRAIN;
             VertexBuilder vertexBuilder = compressedFormat ? new VertexBuilder.CompressedVertexBuilder() : new VertexBuilder.DefaultVertexBuilder();

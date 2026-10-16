@@ -33,7 +33,7 @@ public class MinecraftMixin {
     private void bypassWaylandIcon(Window instance, PackResources packResources, IconSet iconSet) throws IOException {
         if (!Platform.isWayLand())
         {
-            this.window.setIcon(this.vanillaPackResources, SharedConstants.getCurrentVersion().stable() ? IconSet.RELEASE : IconSet.SNAPSHOT);
+            this.window.setIcon(this.vanillaPackResources, SharedConstants.getCurrentVersion().isStable() ? IconSet.RELEASE : IconSet.SNAPSHOT);
         }
     }
 }

@@ -1,23 +1,17 @@
 package net.vulkanmod.vulkan;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.platform.Window;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.fog.FogData;
-import net.vulkanmod.render.engine.VkGpuBuffer;
 import net.vulkanmod.vulkan.device.DeviceManager;
 import net.vulkanmod.vulkan.shader.PipelineState;
 import net.vulkanmod.vulkan.util.ColorUtil;
 import net.vulkanmod.vulkan.util.MappedBuffer;
 import net.vulkanmod.vulkan.util.VUtil;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryUtil;
 
-import static com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread;
 import static org.lwjgl.vulkan.VK10.*;
 
 import java.nio.ByteBuffer;
@@ -43,8 +37,6 @@ public abstract class VRenderSystem {
     public static boolean logicOp = false;
     public static int logicOpFun = 0;
 
-    private static final GpuTextureView[] shaderTextures = new GpuTextureView[12];
-
     public static float clearDepthValue = DEFAULT_DEPTH_VALUE;
     public static FloatBuffer clearColor = MemoryUtil.memCallocFloat(4);
 
@@ -59,7 +51,6 @@ public abstract class VRenderSystem {
 
     public static MappedBuffer shaderColor = new MappedBuffer(4 * 4);
     public static MappedBuffer shaderFogColor = new MappedBuffer(4 * 4);
-    public static FogData fogData;
 
     public static MappedBuffer screenSize = new MappedBuffer(2 * 4);
     public static MappedBuffer textureSize = new MappedBuffer(2 * 4);
@@ -75,21 +66,9 @@ public abstract class VRenderSystem {
 
     public static void initRenderer() {
         Vulkan.initVulkan(window);
+        Renderer.initRenderer();
 
         setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-    }
-
-    public static void setShaderTexture(int i, @Nullable GpuTextureView gpuTextureView) {
-        assertOnRenderThread();
-        if (i >= 0 && i < shaderTextures.length) {
-            shaderTextures[i] = gpuTextureView;
-        }
-    }
-
-    @Nullable
-    public static GpuTextureView getShaderTexture(int i) {
-        assertOnRenderThread();
-        return i >= 0 && i < shaderTextures.length ? shaderTextures[i] : null;
     }
 
     public static MappedBuffer getScreenSize() {
@@ -146,14 +125,6 @@ public abstract class VRenderSystem {
         mat.get(projectionMatrix.buffer.asFloatBuffer());
     }
 
-    public static void applyProjectionMatrix(GpuBufferSlice bufferSlice) {
-        long ptr = ((VkGpuBuffer) bufferSlice.buffer()).getBuffer().getDataPtr();
-        ByteBuffer byteBuffer = MemoryUtil.memByteBuffer(ptr + bufferSlice.offset(), (int) bufferSlice.length());
-        Matrix4f matrix4f = new Matrix4f().set(byteBuffer);
-
-        matrix4f.get(projectionMatrix.buffer.asFloatBuffer());
-    }
-
     public static void calculateMVP() {
         org.joml.Matrix4f MV = new org.joml.Matrix4f(modelViewMatrix.buffer.asFloatBuffer());
         org.joml.Matrix4f P = new org.joml.Matrix4f(projectionMatrix.buffer.asFloatBuffer());
@@ -202,10 +173,6 @@ public abstract class VRenderSystem {
 
     public static MappedBuffer getShaderFogColor() {
         return shaderFogColor;
-    }
-
-    public static FogData getFogData() {
-        return fogData;
     }
 
     public static void setCurrentTime(int currentTime) {

@@ -1,10 +1,9 @@
 package net.vulkanmod.config.gui;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.vulkanmod.config.gui.render.GuiRenderer;
@@ -104,28 +103,28 @@ public class VOptionList extends GuiElement {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
-        this.updateScrollingState(event.x(), event.button());
-        if (this.isMouseOver(event.x(), event.y())) {
-            Entry entry = this.getEntryAtPos(event.x(), event.y());
-            if (entry != null && entry.mouseClicked(event, bl)) {
+    public boolean mouseClicked(double x, double y, int button) {
+        this.updateScrollingState(x, button);
+        if (this.isMouseOver(x, y)) {
+            Entry entry = this.getEntryAtPos(x, y);
+            if (entry != null && entry.mouseClicked(x, y, button)) {
                 setFocused(entry);
                 entry.setFocused(true);
                 return true;
             }
 
-            return event.button() == 0;
+            return button == 0;
         }
 
         return false;
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (this.isValidClickButton(event.button())) {
-            Entry entry = this.getEntryAtPos(event.x(), event.y());
+    public boolean mouseReleased(double x, double y, int button) {
+        if (this.isValidClickButton(button)) {
+            Entry entry = this.getEntryAtPos(x, y);
             if (entry != null) {
-                if (entry.mouseReleased(event)) {
+                if (entry.mouseReleased(x, y, button)) {
                     entry.setFocused(false);
                     setFocused(null);
                     return true;
@@ -136,13 +135,13 @@ public class VOptionList extends GuiElement {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (event.button() != 0) {
+    public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+        if (button != 0) {
             return false;
         }
 
         if (this.getFocused() != null) {
-            return this.getFocused().mouseDragged(event, deltaX, deltaY);
+            return this.getFocused().mouseDragged(x, y, button, dx, dy);
         }
 
         if (!this.scrolling) {
@@ -150,14 +149,14 @@ public class VOptionList extends GuiElement {
         }
 
         double maxScroll = this.getMaxScroll();
-        if (event.y() < this.y) {
+        if (y < this.y) {
             this.setScrollAmount(0.0);
-        } else if (event.y() > this.getBottom()) {
+        } else if (y > this.getBottom()) {
             this.setScrollAmount(maxScroll);
         } else if (maxScroll > 0.0) {
             double barHeight = (double) this.height * this.height / this.getTotalLength();
             double scrollFactor = Math.max(1.0, maxScroll / (this.height - barHeight));
-            this.setScrollAmount(this.getScrollAmount() + deltaY * scrollFactor);
+            this.setScrollAmount(this.getScrollAmount() + dy * scrollFactor);
         }
 
         return true;
@@ -327,21 +326,21 @@ public class VOptionList extends GuiElement {
         }
 
         @Override
-        public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        public boolean mouseClicked(double x, double y, int button) {
             if (widget == null) return false;
-            return widget.mouseClicked(event, bl);
+            return widget.mouseClicked(x, y, button);
         }
 
         @Override
-        public boolean mouseReleased(MouseButtonEvent event) {
+        public boolean mouseReleased(double x, double y, int button) {
             if (widget == null) return false;
-            return widget.mouseReleased(event);
+            return widget.mouseReleased(x, y, button);
         }
 
         @Override
-        public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
             if (widget == null) return false;
-            return widget.mouseDragged(event, deltaX, deltaY);
+            return widget.mouseDragged(x, y, button, dx, dy);
         }
 
         @Override

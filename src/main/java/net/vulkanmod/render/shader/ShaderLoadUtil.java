@@ -1,11 +1,9 @@
 package net.vulkanmod.render.shader;
 
-import com.google.common.collect.Sets;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.blaze3d.shaders.ShaderType;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.vulkanmod.vulkan.shader.SpirvCompiler;
 import org.apache.commons.io.IOUtils;
 
@@ -17,17 +15,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
 
 public abstract class ShaderLoadUtil {
 
     public static final String RESOURCES_PATH = SpirvCompiler.class.getResource("/assets/vulkanmod").toExternalForm();
     public static final String SHADERS_PATH = "%s/shaders/".formatted(RESOURCES_PATH);
-
-    public static final Set<String> REMAPPED_SHADERS = Sets.newHashSet("core/screenquad.vsh",
-                                                                       "core/rendertype_item_entity_translucent_cull.vsh",
-                                                                       "core/animate_sprite.vsh",
-                                                                       "core/animate_sprite_blit.fsh");
 
     public static String resolveShaderPath(String path) {
         return resolveShaderPath(SHADERS_PATH, path);
@@ -76,7 +68,7 @@ public abstract class ShaderLoadUtil {
 
     public static JsonObject getJsonConfig(String path, String rendertype) {
         // Check for external shader
-        if (rendertype.contains(String.valueOf(Identifier.NAMESPACE_SEPARATOR))) {
+        if (rendertype.contains(String.valueOf(ResourceLocation.NAMESPACE_SEPARATOR))) {
             return null;
         }
 
@@ -106,62 +98,6 @@ public abstract class ShaderLoadUtil {
 
     }
 
-    public static String getShaderSource(Identifier resourceLocation, ShaderType type) {
-        String shaderExtension = switch (type) {
-            case VERTEX -> ".vsh";
-            case FRAGMENT -> ".fsh";
-        };
-
-        String path = resourceLocation.getPath();
-        String[] splitPath = splitPath(path);
-        String shaderName = "%s%s".formatted(splitPath[1], shaderExtension);
-        String shaderFile = "%s/shaders/%s/%s".formatted(RESOURCES_PATH, path, shaderName);
-
-        InputStream stream;
-        try {
-            stream = getInputStream(shaderFile);
-
-            if (stream == null) {
-                shaderFile = "%s/shaders/%s%s".formatted(RESOURCES_PATH, path, shaderExtension);
-                stream = getInputStream(shaderFile);
-            }
-
-            if (stream == null) {
-                return null;
-            }
-
-            String source = IOUtils.toString(new BufferedReader(new InputStreamReader(stream)));
-            stream.close();
-
-            return source;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String getShaderSource(String path, ShaderType type) {
-        String shaderExtension = switch (type) {
-            case VERTEX -> ".vsh";
-            case FRAGMENT -> ".fsh";
-        };
-
-        String[] splitPath = splitPath(path);
-        String shaderName = "%s%s".formatted(splitPath[1], shaderExtension);
-
-        String shaderFile = "%s/shaders/%s/%s".formatted(RESOURCES_PATH, path, shaderName);
-
-        InputStream stream;
-        try {
-            stream = getInputStream(shaderFile);
-            String source = IOUtils.toString(new BufferedReader(new InputStreamReader(stream)));
-            stream.close();
-
-            return source;
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static String getShaderSource(String path, String shaderName) {
         String shaderFile = "%s/%s".formatted(path, shaderName);
 
@@ -187,7 +123,7 @@ public abstract class ShaderLoadUtil {
             case VERTEX_SHADER -> ".vsh";
             case FRAGMENT_SHADER -> ".fsh";
             case COMPUTE_SHADER -> ".comp";
-            default -> throw new UnsupportedOperationException("shader type %s unsupported");
+            default -> throw new UnsupportedOperationException("shader type %s unsupported".formatted(type));
         };
 
         String basePath = path;

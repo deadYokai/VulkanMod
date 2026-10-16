@@ -1,10 +1,10 @@
 package net.vulkanmod.vulkan.texture;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.vulkanmod.Initializer;
 import net.vulkanmod.gl.VkGlTexture;
-import net.vulkanmod.render.engine.VkGpuTexture;
 import net.vulkanmod.render.texture.SpriteUpdateUtil;
-import net.vulkanmod.vulkan.VRenderSystem;
 import net.vulkanmod.vulkan.shader.Pipeline;
 import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
 import org.lwjgl.system.MemoryUtil;
@@ -94,28 +94,25 @@ public abstract class VTextureSelector {
         };
     }
 
+    /**
+     * 1.21.1: shader textures are plain GL ids set through RenderSystem.setShaderTexture(int, int).
+     * Resolve them through the GL emulation layer, falling back to the missing texture.
+     */
     public static void bindShaderTextures(Pipeline pipeline) {
         var imageDescriptors = pipeline.getImageDescriptors();
 
         for (ImageDescriptor state : imageDescriptors) {
-            var textureView = VRenderSystem.getShaderTexture(state.imageIdx);
+            final int shaderTexture = RenderSystem.getShaderTexture(state.imageIdx);
 
-            if (textureView == null)
-                continue;
-
-            VkGpuTexture gpuTexture = (VkGpuTexture) textureView.texture();
-
-            final int shaderTexture = gpuTexture.glId();
             VkGlTexture texture = VkGlTexture.getTexture(shaderTexture);
 
             if (texture != null && texture.getVulkanImage() != null) {
                 VTextureSelector.bindTexture(state.imageIdx, texture.getVulkanImage());
             }
-            // TODO
-//            else {
-//                 texture = GlTexture.getTexture(MissingTextureAtlasSprite.getTexture().getId());
-//                 VTextureSelector.bindTexture(state.imageIdx, texture.getVulkanImage());
-//            }
+            else {
+                texture = VkGlTexture.getTexture(MissingTextureAtlasSprite.getTexture().getId());
+                VTextureSelector.bindTexture(state.imageIdx, texture.getVulkanImage());
+            }
         }
     }
 

@@ -1,7 +1,6 @@
 package net.vulkanmod.render.vertex;
 
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.RenderType;
 import net.vulkanmod.Initializer;
 import net.vulkanmod.interfaces.ExtendedRenderType;
 import net.vulkanmod.vulkan.VRenderSystem;
@@ -9,6 +8,10 @@ import net.vulkanmod.vulkan.VRenderSystem;
 import java.util.EnumSet;
 import java.util.function.Function;
 
+/**
+ * The chunk pipeline works on four terrain layers. 1.21.1 vanilla has five render types:
+ * solid, cutout_mipped, cutout, translucent, tripwire. Both cutout variants map onto CUTOUT.
+ */
 public enum TerrainRenderType {
     SOLID(0.0f),
     CUTOUT(0.5f),
@@ -40,34 +43,28 @@ public enum TerrainRenderType {
     }
 
     public static TerrainRenderType get(RenderType renderType) {
-        return ((ExtendedRenderType)renderType).getTerrainRenderType();
-    }
-
-    public static TerrainRenderType get(ChunkSectionLayer layer) {
-        return switch (layer) {
-            case SOLID -> SOLID;
-            case CUTOUT -> CUTOUT;
-            case TRANSLUCENT -> TRANSLUCENT;
-            case TRIPWIRE -> TRIPWIRE;
-        };
+        return ((ExtendedRenderType) renderType).getTerrainRenderType();
     }
 
     public static TerrainRenderType get(String name) {
         return switch (name) {
             case "solid" -> TerrainRenderType.SOLID;
-            case "cutout" -> TerrainRenderType.CUTOUT;
+            case "cutout", "cutout_mipped" -> TerrainRenderType.CUTOUT;
             case "translucent" -> TerrainRenderType.TRANSLUCENT;
             case "tripwire" -> TerrainRenderType.TRIPWIRE;
             default -> null;
         };
     }
 
-    public static ChunkSectionLayer getLayer(TerrainRenderType renderType) {
+    /**
+     * @return the vanilla render type whose render state (block atlas + lightmap textures) this layer needs
+     */
+    public static RenderType getRenderType(TerrainRenderType renderType) {
         return switch (renderType) {
-            case SOLID -> ChunkSectionLayer.SOLID;
-            case CUTOUT -> ChunkSectionLayer.CUTOUT;
-            case TRANSLUCENT -> ChunkSectionLayer.TRANSLUCENT;
-            case TRIPWIRE -> ChunkSectionLayer.TRIPWIRE;
+            case SOLID -> RenderType.solid();
+            case CUTOUT -> RenderType.cutoutMipped();
+            case TRANSLUCENT -> RenderType.translucent();
+            case TRIPWIRE -> RenderType.tripwire();
         };
     }
 

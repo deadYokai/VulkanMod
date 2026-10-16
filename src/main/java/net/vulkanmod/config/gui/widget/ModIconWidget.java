@@ -2,20 +2,20 @@ package net.vulkanmod.config.gui.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.RenderPipelines;
+
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.vulkanmod.config.gui.render.GuiRenderer;
 import net.vulkanmod.config.gui.util.VGuiConstants;
 import net.vulkanmod.vulkan.util.ColorUtil;
 
 public class ModIconWidget extends VAbstractWidget {
     final FormattedText name;
-    final Identifier icon;
+    final ResourceLocation icon;
 
-    public ModIconWidget(FormattedText name, Identifier icon, int x0, int y0, int width, int height) {
+    public ModIconWidget(FormattedText name, ResourceLocation icon, int x0, int y0, int width, int height) {
         this.name = name;
         this.icon = icon;
         this.x = x0;
@@ -38,7 +38,7 @@ public class ModIconWidget extends VAbstractWidget {
         int iconSize = this.height - 4;
         int iconX = this.x + 4;
         int iconY = this.y + (height - iconSize) / 2;
-        GuiRenderer.guiGraphics.blit(RenderPipelines.GUI_TEXTURED, icon, iconX, iconY, 0f, 0f, iconSize, iconSize, iconSize, iconSize);
+        GuiRenderer.guiGraphics.blit(icon, iconX, iconY, iconSize, iconSize, 0f, 0f, iconSize, iconSize, iconSize, iconSize);
         Font textRenderer = Minecraft.getInstance().font;
 
         int size = this.height;

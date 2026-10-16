@@ -1,7 +1,6 @@
 package net.vulkanmod.vulkan.pass;
 
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import net.vulkanmod.gl.VkGlTexture;
 import net.vulkanmod.vulkan.framebuffer.Framebuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandBuffer;
@@ -28,16 +27,12 @@ public interface MainPass {
         return null;
     }
 
-    default GpuTexture getColorAttachment() {
-        return null;
-    }
-
-    default GpuTextureView getColorAttachmentView() {
-        return null;
-    }
-
-    default GpuTexture getDepthAttachment() {
-        return null;
+    /**
+     * @return the GL texture wrapping the main framebuffer's current color image
+     * (1.21.1 code addresses the main render target through its GL texture id)
+     */
+    default VkGlTexture getColorAttachment() {
+        throw new UnsupportedOperationException();
     }
 
 }

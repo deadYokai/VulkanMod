@@ -2,11 +2,11 @@ package net.vulkanmod.config.gui.widget;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.render.TextureSetup;
+
 import net.minecraft.network.chat.Component;
 import net.vulkanmod.config.gui.render.GuiRenderer;
 import net.vulkanmod.config.option.CyclingOption;
-import net.vulkanmod.render.shader.CustomRenderPipelines;
+
 import net.vulkanmod.vulkan.util.ColorUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -151,7 +151,7 @@ public class CyclingOptionWidget extends OptionWidget<CyclingOption<?>> {
             float[][] vertices = getVertices(f);
 
 
-            GuiRenderer.submitPolygon(CustomRenderPipelines.GUI_TRIANGLES, TextureSetup.noTexture(), vertices, color);
+            GuiRenderer.submitPolygon(vertices, color);
         }
 
         private float[] @NotNull [] getVertices(float f) {

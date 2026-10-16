@@ -76,7 +76,7 @@ public class VBO {
                 autoIndexBuffer = Renderer.getDrawer().getTriangleFanIndexBuffer();
                 this.indexCount = AutoIndexBuffer.DrawType.getTriangleStripIndexCount(this.vertexCount);
             }
-            case TRIANGLE_STRIP -> {
+            case TRIANGLE_STRIP, LINE_STRIP -> {
                 autoIndexBuffer = Renderer.getDrawer().getTriangleStripIndexBuffer();
                 this.indexCount = AutoIndexBuffer.DrawType.getTriangleStripIndexCount(this.vertexCount);
             }
@@ -126,6 +126,61 @@ public class VBO {
             else {
                 Renderer.getDrawer().draw(this.vertexBuffer, this.vertexCount);
             }
+        }
+    }
+
+    public VBO(com.mojang.blaze3d.vertex.VertexBuffer.Usage usage) {
+        this(usage == com.mojang.blaze3d.vertex.VertexBuffer.Usage.STATIC);
+    }
+
+    public void drawWithShader(org.joml.Matrix4f modelView, org.joml.Matrix4f projection,
+                               net.minecraft.client.renderer.ShaderInstance shaderInstance) {
+        if (this.indexCount != 0) {
+            com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+
+            com.mojang.blaze3d.systems.RenderSystem.setShader(() -> shaderInstance);
+
+            net.vulkanmod.vulkan.VRenderSystem.applyMVP(modelView, projection);
+            net.vulkanmod.vulkan.VRenderSystem.setPrimitiveTopologyGL(this.mode.asGLMode);
+
+            shaderInstance.setDefaultUniforms(VertexFormat.Mode.QUADS, modelView, projection,
+                                              net.minecraft.client.Minecraft.getInstance().getWindow());
+            shaderInstance.apply();
+
+            this.drawGeometry();
+
+            // Reset MVP to previous state
+            net.vulkanmod.vulkan.VRenderSystem.applyMVP(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix(),
+                                                        com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix());
+        }
+    }
+
+    public void drawWithShader(org.joml.Matrix4f modelView, org.joml.Matrix4f projection, GraphicsPipeline pipeline) {
+        if (this.indexCount != 0) {
+            com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
+
+            net.vulkanmod.vulkan.VRenderSystem.applyMVP(modelView, projection);
+            net.vulkanmod.vulkan.VRenderSystem.setPrimitiveTopologyGL(this.mode.asGLMode);
+
+            this.bind(pipeline);
+            this.drawGeometry();
+
+            // Reset MVP to previous state
+            net.vulkanmod.vulkan.VRenderSystem.applyMVP(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix(),
+                                                        com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix());
+        }
+    }
+
+    private void drawGeometry() {
+        if (this.autoIndexed) {
+            this.indexBuffer = getAutoIndexBuffer();
+        }
+
+        if (this.indexBuffer != null) {
+            Renderer.getDrawer().drawIndexed(this.vertexBuffer, this.indexBuffer, this.indexCount);
+        }
+        else {
+            Renderer.getDrawer().draw(this.vertexBuffer, this.vertexCount);
         }
     }
 
